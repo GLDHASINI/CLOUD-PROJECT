@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Smart Backup & Restore System | Version Control + Delete</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9eef3 0%, #dce3ec 100%);
+            margin: 0;
+            padding: 24px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Main Dashboard Card */
+        .backup-dashboard {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* Header */
+        .header {
+            background: #0b2b3b;
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        .title-section h1 {
+            margin: 0;
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .title-section p {
+            margin: 0.3rem 0 0;
+            opacity: 0.8;
+            font-size: 0.85rem;
+        }
+        .badge-status {
+            background: #1f6e43;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* main content */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.8rem;
+            padding: 2rem;
+        }
+
+        /* cards */
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            transition: 0.1s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #2c7da0;
+            padding-left: 12px;
+        }
+        .upload-area {
+            border: 2px dashed #b9d0e0;
+            background: #fafdff;
+            border-radius: 1.2rem;
+            padding: 1.2rem;
+            text-align: center;
+            margin-bottom: 1.2rem;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #2c7da0;
+            background: #f0f8ff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-secondary {
+            background: #3c5a6f;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2c7da0;
+            color: #2c7da0;
+        }
+        .btn-outline:hover {
+            background: #e1f0f7;
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.75rem;
+        }
+        .btn-danger {
+            background: #b44332;
+        }
+        .btn-danger-outline {
+            background: transparent;
+            border: 1px solid #b44332;
+            color: #b44332;
+        }
+        .btn-danger-outline:hover {
+            background: #fbe9e7;
+        }
+        .file-list, .timeline-list {
+            max-height: 360px;
+            overflow-y: auto;
+            margin-top: 0.8rem;
+        }
+        .file-item {
+            background: #f8fafc;
+            margin-bottom: 0.7rem;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            border-left: 3px solid #61a5c2;
+            transition: 0.1s;
+            position: relative;
+        }
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .file-name {
+            font-weight: 700;
+            word-break: break-word;
+        }
+        .version-badge {
+            font-size: 0.7rem;
+            background: #e2eaf1;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .restore-panel {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .select-version {
+            padding: 4px 8px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            font-size: 0.7rem;
+        }
+        .history-timeline {
+            position: relative;
+        }
+        .timeline-entry {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #e2edf2;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+        .alert-duplicate {
+            background: #fff3e0;
+            border-left: 4px solid #f4a261;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        .suggestion-box {
+            background: #eef3fc;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 1.2rem;
+        }
+        hr {
+            margin: 1rem 0;
+            border: none;
+            height: 1px;
+            background: #e0e9f0;
+        }
+        .footer-note {
+            background: #f1f5f9;
+            padding: 1rem 2rem;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #2c3e4e;
+        }
+        @media (max-width: 800px) {
+            .content-grid { grid-template-columns: 1fr; padding: 1rem; }
+            .header { flex-direction: column; align-items: start; }
+        }
+        .empty-msg {
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 1rem;
+            text-align: center;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .delete-file-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #b44332;
+            transition: 0.2s;
+            padding: 0 4px;
+            border-radius: 20px;
+        }
+        .delete-file-btn:hover {
+            background: #ffe8e5;
+            transform: scale(1.05);
+        }
+        .file-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .confirm-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e4e;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+<div class="backup-dashboard">
+    <div class="header">
+        <div class="title-section">
+            <h1>📦 Smart Backup & Restore <span style="font-weight:400">| Version Control</span></h1>
+            <p>Secure storage • version timeline • duplicate detection • smart backup advisor • delete files</p>
+        </div>
+        <div class="badge-status">
+            <span>🟢 Active Backup System</span>
+        </div>
+    </div>
+
+    <div class="content-grid">
+        <!-- LEFT COLUMN: Upload & File Manager -->
+        <div class="card">
+            <h3>📂 1. Upload & Secure Storage</h3>
+            <div class="upload-area" id="uploadZone">
+                <label for="fileInput" style="cursor:pointer; display:block;">
+                    📁 Drag & click to upload files<br>
+                    <span style="font-size:0.7rem; opacity:0.6;">(Supports any file type, versioning auto)</span>
+                </label>
+                <input type="file" id="fileInput" multiple style="display:none">
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 12px; gap: 8px;">
+                <button id="globalRestoreBtn" class="btn btn-secondary btn-sm" style="background:#2c7da0;">🔄 Global Restore Assistant</button>
+            </div>
+            <div>
+                <h4 style="margin:0 0 10px 0;">📄 Managed Files & Versions</h4>
+                <div id="fileListContainer" class="file-list">
+                    <div class="empty-msg">✨ No files backed up yet. Upload your first file.</div>
+                </div>
+            </div>
+            <div class="suggestion-box" id="suggestionPanel">
+                <strong>🧠 Smart Backup Advisor</strong>
+                <div id="smartAdvice">Analyzing usage patterns...</div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Timeline & History + Restore -->
+        <div class="card">
+            <h3>⏱️ 2. Backup Timeline & Version Recovery</h3>
+            <div id="timelineHistory" class="timeline-list">
+                <div class="empty-msg">No backup actions yet. Upload to see timeline.</div>
+            </div>
+            <hr>
+            <div>
+                <h4 style="margin:0 0 8px 0;">♻️ Restore to any version</h4>
+                <p style="font-size:0.75rem; margin:0 0 10px 0;">Select file → choose version → restore as current version (new backup)</p>
+                <div id="restoreInterface">
+                    <div class="empty-msg">Upload a file to enable version restore.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-note">
+        🔒 Each upload creates a new version. Duplicate detection alerts but still stores versions. Restoring adds a new version entry preserving history. 🗑️ Delete a file removes all its versions permanently.
+    </div>
+</div>
+<div id="toastMessage" class="confirm-toast"></div>
+
+<script>
+    // ---------- STORAGE STRUCTURE ----------
+    // backupStore: { fileName: { versions: [{ id, versionNumber, timestamp, fileData (base64), size, hash }], currentVersionId, duplicateAlert } }
+    // globalTimeline: array of events { type, fileName, versionNumber, timestamp, details }
+    let backupStore = new Map();      // key: normalized fileName (string)
+    let globalTimeline = [];          // chronological order
+    let activityLog = [];              // { timestamp, fileName } for usage pattern
+
+    // Helper: simple hash for duplicate detection (djb2)
+    function computeHash(data) {
+        let hash = 0;
+        for (let i = 0; i < data.length; i++) {
+            hash = ((hash << 5) - hash) + data.charCodeAt(i);
+            hash |= 0;
+        }
+        return hash.toString(16);
+    }
+
+    function normalizeKey(name) {
+        return name.trim().toLowerCase();
+    }
+
+    // Persist to localStorage
+    function persistData() {
+        const exportObj = {
+            store: Array.from(backupStore.entries()).map(([key, value]) => {
+                return { key, value };
+            }),
+            timeline: globalTimeline,
+            activityLog: activityLog
+        };
+        localStorage.setItem('backupSystemV1', JSON.stringify(exportObj));
+    }
+
+    function loadPersistedData() {
+        const raw = localStorage.getItem('backupSystemV1');
+        if (!raw) return;
+        try {
+            const data = JSON.parse(raw);
+            if (data.store) {
+                backupStore.clear();
+                data.store.forEach(item => {
+                    backupStore.set(item.key, item.value);
+                });
+            }
+            if (data.timeline) globalTimeline = data.timeline;
+            if (data.activityLog) activityLog = data.activityLog;
+        } catch(e) { console.warn(e); }
+    }
+
+    function showToast(message, duration = 2500) {
+        const toast = document.getElementById('toastMessage');
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, duration);
+    }
+
+    // Add timeline event
+    function addTimelineEvent(type, fileName, versionNumber, details = '') {
+        const event = {
+            type, // 'UPLOAD', 'RESTORE', 'DUPLICATE_DETECTED', 'DELETE_FILE'
+            fileName,
+            versionNumber: versionNumber || null,
+            timestamp: new Date().toISOString(),
+            details
+        };
+        globalTimeline.push(event);
+        persistData();
+        renderTimeline();
+    }
+
+    function logActivity(fileName) {
+        activityLog.push({ timestamp: Date.now(), fileName: normalizeKey(fileName) });
+        if (activityLog.length > 800) activityLog = activityLog.slice(-600);
+        persistData();
+        updateSmartAdvice();
+    }
+
+    // Duplicate detection across versions of same file
+    function isDuplicateContent(fileNameKey, newHash, newSize) {
+        const fileEntry = backupStore.get(fileNameKey);
+        if (!fileEntry) return false;
+        const versions = fileEntry.versions;
+        for (let ver of versions) {
+            if (ver.hash === newHash && ver.size === newSize) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // DELETE entire file (all versions)
+    function deleteFile(fileNameKey) {
+        const entry = backupStore.get(fileNameKey);
+        if (!entry) {
+            showToast("File not found.", 1500);
+            return;
+        }
+        const displayName = entry.versions[0]?.name || fileNameKey;
+        const confirmMsg = `⚠️ Permanently delete "${displayName}" and all its ${entry.versions.length} version(s)? This action cannot be undone.`;
+        if (confirm(confirmMsg)) {
+            backupStore.delete(fileNameKey);
+            addTimelineEvent('DELETE_FILE', displayName, null, `Removed entire file with all versions`);
+            logActivity(fileNameKey + "_deleted");
+            persistData();
+            renderFileList();
+            renderRestorePanel();
+            renderTimeline();
+            updateSmartAdvice();
+            showToast(`🗑️ "${displayName}" deleted successfully.`, 2000);
+        }
+    }
+
+    // Upload files logic
+    async function handleFiles(files) {
+        for (let file of files) {
+            const originalName = file.name;
+            const normalizedKey = normalizeKey(originalName);
+            const fileSize = file.size;
+            const reader = new FileReader();
+            const fileDataPromise = new Promise((resolve) => {
+                reader.onload = async (e) => {
+                    const base64Data = e.target.result;
+                    const rawString = base64Data;
+                    const hash = computeHash(rawString);
+                    let existingEntry = backupStore.get(normalizedKey);
+                    let isDuplicate = false;
+
+                    if (existingEntry) {
+                        isDuplicate = isDuplicateContent(normalizedKey, hash, fileSize);
+                        const newVersionNum = existingEntry.versions.length + 1;
+                        const newVersion = {
+                            id: Date.now() + Math.random(),
+                            versionNumber: newVersionNum,
+                            timestamp: new Date().toISOString(),
+                            fileData: base64Data,
+                            size: fileSize,
+                            hash: hash,
+                            name: originalName
+                        };
+                        existingEntry.versions.push(newVersion);
+                        existingEntry.currentVersionId = newVersion.id;
+                        if (isDuplicate) {
+                            addTimelineEvent('DUPLICATE_DETECTED', originalName, newVersionNum, 'Duplicate content (same hash)');
+                        } else {
+                            addTimelineEvent('UPLOAD', originalName, newVersionNum, `New version ${newVersionNum}`);
+                        }
+                        backupStore.set(normalizedKey, existingEntry);
+                    } else {
+                        const firstVersion = {
+                            id: Date.now() + Math.random(),
+                            versionNumber: 1,
+                            timestamp: new Date().toISOString(),
+                            fileData: base64Data,
+                            size: fileSize,
+                            hash: hash,
+                            name: originalName
+                        };
+                        const newEntry = {
+                            versions: [firstVersion],
+                            currentVersionId: firstVersion.id,
+                            duplicateAlert: false
+                        };
+                        backupStore.set(normalizedKey, newEntry);
+                        addTimelineEvent('UPLOAD', originalName, 1, 'Initial backup');
+                    }
+
+                    logActivity(originalName);
+                    persistData();
+                    renderFileList();
+                    renderRestorePanel();
+                    updateSmartAdvice();
+                    resolve();
+                };
+                reader.readAsDataURL(file);
+            });
+            await fileDataPromise;
+        }
+        renderTimeline();
+    }
+
+    // Restore specific version: creates a new version with the restored file content
+    function restoreToVersion(fileNameKey, versionId) {
+        const entry = backupStore.get(fileNameKey);
+        if (!entry) {
+            showToast("File entry missing", 1500);
+            return;
+        }
+        const targetVersion = entry.versions.find(v => v.id == versionId);
+        if (!targetVersion) return;
+
+        const newVersionNumber = entry.versions.length + 1;
+        const restoredVersion = {
+            id: Date.now() + Math.random(),
+            versionNumber: newVersionNumber,
+            timestamp: new Date().toISOString(),
+            fileData: targetVersion.fileData,
+            size: targetVersion.size,
+            hash: targetVersion.hash,
+            name: targetVersion.name
+        };
+        entry.versions.push(restoredVersion);
+        entry.currentVersionId = restoredVersion.id;
+        backupStore.set(fileNameKey, entry);
+        addTimelineEvent('RESTORE', targetVersion.name, newVersionNumber, `Restored from version ${targetVersion.versionNumber}`);
+        logActivity(targetVersion.name);
+        persistData();
+        renderFileList();
+        renderRestorePanel();
+        renderTimeline();
+        updateSmartAdvice();
+        showToast(`✅ Restored "${targetVersion.name}" to version ${newVersionNumber} (based on v${targetVersion.versionNumber})`, 2000);
+    }
+
+    // Render file list with version indicators, duplicate warning, and DELETE button
+    function renderFileList() {
+        const container = document.getElementById('fileListContainer');
+        if (backupStore.size === 0) {
+            container.innerHTML = '<div class="empty-msg">✨ No files backed up yet. Upload your first file.</div>';
+            return;
+        }
+        let html = '';
+        for (let [key, entry] of backupStore.entries()) {
+            const originalName = entry.versions[0]?.name || key;
+            const versionCount = entry.versions.length;
+            const latestVersion = entry.versions.find(v => v.id === entry.currentVersionId) || entry.versions[entry.versions.length-1];
+            let duplicateNote = '';
+            const lastTimeline = globalTimeline.filter(ev => ev.fileName === originalName && ev.type === 'DUPLICATE_DETECTED').slice(-1)[0];
+            if (lastTimeline && (Date.now() - new Date(lastTimeline.timestamp).getTime() < 60000)) {
+                duplicateNote = '<div class="alert-duplicate">⚠️ Duplicate content detected in latest upload</div>';
+            } else {
+                const hashes = entry.versions.map(v=>v.hash);
+                const uniqueHashes = new Set(hashes);
+                if (hashes.length !== uniqueHashes.size) duplicateNote = '<div class="alert-duplicate">📋 Duplicate versions present (identical content)</div>';
+            }
+            html += `
+                <div class="file-item">
+                    <div class="file-header">
+                        <span class="file-name">📄 ${escapeHtml(originalName)}</span>
+                        <div class="file-actions">
+                            <span class="version-badge">${versionCount} version(s)</span>
+                            <button class="delete-file-btn" data-filename-key="${escapeAttr(key)}" title="Delete all versions">🗑️</button>
+                        </div>
+                    </div>
+                    <div style="font-size:0.7rem; margin: 6px 0;">Latest: v${latestVersion.versionNumber} • ${new Date(latestVersion.timestamp).toLocaleString()}</div>
+                    ${duplicateNote}
+                    <div class="restore-panel">
+                        <button class="btn-sm btn-outline quick-restore-btn" data-filename="${escapeAttr(key)}" data-versionid="${latestVersion.id}">↺ Restore to latest</button>
+                        <button class="btn-sm btn-secondary versions-manage" data-filename="${escapeAttr(key)}" style="background:#5e8d9f;">📜 Show versions</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+        
+        // Attach delete listeners
+        document.querySelectorAll('.delete-file-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const fkey = btn.getAttribute('data-filename-key');
+                if (fkey) deleteFile(fkey);
+            });
+        });
+        
+        document.querySelectorAll('.quick-restore-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fname = btn.getAttribute('data-filename');
+                const versionId = btn.getAttribute('data-versionid');
+                restoreToVersion(fname, versionId);
+            });
+        });
+        document.querySelectorAll('.versions-manage').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fname = btn.getAttribute('data-filename');
+                showVersionDetailsModal(fname);
+            });
+        });
+    }
+
+    function showVersionDetailsModal(fileKey) {
+        const entry = backupStore.get(fileKey);
+        if (!entry) return;
+        const versions = entry.versions.slice().sort((a,b)=> a.versionNumber - b.versionNumber);
+        let msg = `📁 ${versions[0]?.name || fileKey} - All Versions:\n\n`;
+        versions.forEach(v => {
+            msg += `v${v.versionNumber} | ${new Date(v.timestamp).toLocaleString()} | Size: ${(v.size/1024).toFixed(1)}KB\n`;
+        });
+        msg += `\nSelect version from restore panel on right to restore any version.`;
+        alert(msg);
+    }
+
+    // Render timeline (history)
+    function renderTimeline() {
+        const timelineDiv = document.getElementById('timelineHistory');
+        if (globalTimeline.length === 0) {
+            timelineDiv.innerHTML = '<div class="empty-msg">No backup events yet. Upload files to see timeline.</div>';
+            return;
+        }
+        let timelineHtml = '';
+        const reversed = [...globalTimeline].reverse().slice(0, 35);
+        reversed.forEach(ev => {
+            let icon = ev.type === 'UPLOAD' ? '☁️' : (ev.type === 'RESTORE' ? '♻️' : (ev.type === 'DELETE_FILE' ? '🗑️' : '⚠️'));
+            timelineHtml += `
+                <div class="timeline-entry">
+                    <div><strong>${icon} ${ev.type}</strong> · ${escapeHtml(ev.fileName)} ${ev.versionNumber ? `v${ev.versionNumber}` : ''}</div>
+                    <div style="font-size:0.7rem; color:#4a6272;">${new Date(ev.timestamp).toLocaleString()}</div>
+                </div>
+                ${ev.details ? `<div style="font-size:0.7rem; padding-left: 10px; color:#5f7f95;">${ev.details}</div>` : ''}
+            `;
+        });
+        timelineDiv.innerHTML = timelineHtml;
+    }
+
+    // Restore panel (dropdown for each file and version)
+    function renderRestorePanel() {
+        const panel = document.getElementById('restoreInterface');
+        if (backupStore.size === 0) {
+            panel.innerHTML = '<div class="empty-msg">No files available. Upload files to restore versions.</div>';
+            return;
+        }
+        let html = '<div style="display:flex; flex-direction:column; gap:12px;">';
+        for (let [key, entry] of backupStore.entries()) {
+            const displayName = entry.versions[0]?.name || key;
+            const versionsSorted = [...entry.versions].sort((a,b)=> b.versionNumber - a.versionNumber);
+            const selectId = `verSelect-${key.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            html += `
+                <div style="background:#f5f9fe; border-radius: 16px; padding: 10px;">
+                    <div style="font-weight:600; display:flex; justify-content:space-between;">
+                        <span>📌 ${escapeHtml(displayName)}</span>
+                        <button class="btn-sm btn-danger-outline delete-from-panel" data-filename-key="${escapeAttr(key)}" style="font-size:0.65rem;">🗑️ Delete file</button>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:6px;">
+                        <select id="${selectId}" class="select-version" style="flex:1;">
+                            ${versionsSorted.map(v => `<option value="${v.id}">v${v.versionNumber} - ${new Date(v.timestamp).toLocaleDateString()}</option>`).join('')}
+                        </select>
+                        <button class="btn-sm restore-version-btn" data-filename="${escapeAttr(key)}" data-selectid="${selectId}">Restore selected</button>
+                    </div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        panel.innerHTML = html;
+        
+        document.querySelectorAll('.restore-version-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fname = btn.getAttribute('data-filename');
+                const selectId = btn.getAttribute('data-selectid');
+                const selectEl = document.getElementById(selectId);
+                if (!selectEl) return;
+                const versionId = selectEl.value;
+                if (versionId) restoreToVersion(fname, versionId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-from-panel').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fkey = btn.getAttribute('data-filename-key');
+                if (fkey) deleteFile(fkey);
+            });
+        });
+    }
+
+    // Smart backup frequency suggestion based on usage patterns
+    function updateSmartAdvice() {
+        const adviceDiv = document.getElementById('smartAdvice');
+        const now = Date.now();
+        const last7Days = now - 7 * 24 * 3600 * 1000;
+        const recentActivity = activityLog.filter(log => log.timestamp > last7Days);
+        const uniqueDays = new Set();
+        recentActivity.forEach(act => {
+            const day = new Date(act.timestamp).toLocaleDateString();
+            uniqueDays.add(day);
+        });
+        const activeDays = uniqueDays.size;
+        let suggestion = '';
+        if (backupStore.size === 0) {
+            suggestion = '💡 No files detected. Start uploading to receive backup schedule advice.';
+        } else if (activeDays >= 5) {
+            suggestion = '⚡ High activity detected. Recommend DAILY automated backup (every 24h).';
+        } else if (activeDays >= 2) {
+            suggestion = '📆 Moderate changes. Suggest backup every 2-3 days to keep versions safe.';
+        } else if (activeDays === 1) {
+            suggestion = '🗓️ Occasional updates. Weekly backup might be sufficient, but enable versioning.';
+        } else {
+            suggestion = '📂 No recent modifications. Review files monthly, but version history is secure.';
+        }
+        const totalVersions = Array.from(backupStore.values()).reduce((acc, e) => acc + e.versions.length, 0);
+        suggestion += `<br><span style="font-size:0.7rem;">📊 Total versions: ${totalVersions} | Active days (last week): ${activeDays}</span>`;
+        adviceDiv.innerHTML = suggestion;
+    }
+
+    function globalRestoreHelper() {
+        if (backupStore.size === 0) { alert("No backup files yet. Upload something first."); return; }
+        let fileKeys = Array.from(backupStore.keys());
+        let msg = "🔄 Global Restore: Select a file to restore to its latest version:\n";
+        fileKeys.forEach((k, idx) => { msg += `${idx+1}. ${k}\n`; });
+        const choice = prompt(msg + "\nEnter number:");
+        if (choice && !isNaN(choice)) {
+            const idx = parseInt(choice)-1;
+            if (fileKeys[idx]) {
+                const entry = backupStore.get(fileKeys[idx]);
+                const latest = entry.versions[entry.versions.length-1];
+                restoreToVersion(fileKeys[idx], latest.id);
+            } else { alert("Invalid choice");}
+        }
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function escapeAttr(str) { return str.replace(/['"]/g, ''); }
+
+    function setupEventListeners() {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFiles(Array.from(e.target.files));
+            fileInput.value = '';
+        });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.style.borderColor = '#2c7da0'; });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = '#b9d0e0'; });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '#b9d0e0';
+            if (e.dataTransfer.files.length) handleFiles(Array.from(e.dataTransfer.files));
+        });
+        document.getElementById('globalRestoreBtn').addEventListener('click', globalRestoreHelper);
+    }
+
+    loadPersistedData();
+    renderFileList();
+    renderTimeline();
+    renderRestorePanel();
+    updateSmartAdvice();
+    setupEventListeners();
+</script>
+</body>
+</html>
